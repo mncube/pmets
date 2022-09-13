@@ -1,0 +1,36 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# pmets
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+The pmets package is a collection of tools for scale development and psychometric analysis
+
+## Installation
+
+You can install the development version of pmets from GitHub with:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("mncube/pmets")
+```
+
+## Load Package
+
+```{r example}
+library(pmets)
+```
