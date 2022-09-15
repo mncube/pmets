@@ -1,7 +1,11 @@
 item_pool <- function(df,
-                      ULevels,
-                      ULWeights,
-                      ULFuncs,
+                      L1N,
+                      L1W,
+                      L1F = function(x)x,
+                      L2N = NULL,
+                      L2F = NULL,
+                      L3N = NULL,
+                      L3F = NULL,
                       cal_orig = 20,
                       min_tl = 4,
                       forms = 2,
@@ -9,17 +13,17 @@ item_pool <- function(df,
                       max_its = 15,
                       seed = 100){
   #Initialize repeat loop
-  cal <- cal_orig
+  df <- df %>% dplyr::mutate(cal = cal_orig)
   its <- 1
   it_rounds <- 1
 
-  if (length(ULevels) == 1){
-    x <- ULFuncs[[1]]
+  if (is.null(L2N) & is.null(L3N)){
     repeat{
-      items_by_ul1 <- df %>% ##Stopped Here Need to Fix the Rest##
+
+      df2 <- df %>%
         dplyr::mutate(cal = cal) %>%
         #mutate(Items_UL1 = round(cal*.25*(W_FOU + W_IOPS + W_IONC + W_DEO), 0)) %>%
-        dplyr::mutate(Items_UL1 = function(x)x) %>%
+        dplyr::mutate(L1_Items = L1F(x)) %>%
         #group_by(Domain) %>%
         #mutate(Domain_Length = n())%>%
         #mutate(Items_D = sum(Items_R)) %>%
@@ -30,41 +34,42 @@ item_pool <- function(df,
         #mutate(Items_R = ifelse(Items_D < min_items_per_domain,
         #                        round(Items_R + (min_items_per_domain - Items_D)/Domain_Length,
         #                              0), Items_R)) %>%
-        dplyr::mutate(Items_UL1 = ifelse(Items_UL1 < min_tl,
-                                round(Items_UL1 + (min_tl - Items_UL1), 0),
-                                Items_UL1))
+        dplyr::mutate(L1_Items = ifelse(L1_Items < min_tl,
+                                round(L1_Items + (min_tl - L1_Items), 0),
+                                L1_Items))
 
       #Check that the calibration number worked
-      if (sum(items_by_ul1$Items_UL1) %in% c(cal_orig - 1, cal_orig, cal_orig + 1)) {break}
+      if (sum(df$L1_Items) %in% c(cal_orig - 1, cal_orig, cal_orig + 1)) {break}
 
       if (its == max_its){stop("algorithm didn't converge")}
 
       #Update cal and its
-      cal <- cal - 1
+      df <- df %>%
+        dplyr::mutate(cal = cal - 1)
       its <- its + 1
     }
 
     #Randomly add item if total length cal - 1
-    if (sum(items_by_ul1$Items_UL1) == cal_orig - 1){
-      tot_rows <- nrow(items_by_ul1)
-      items_by_ul1 <- items_by_ul1 %>%
+    if (sum(df$L1_Items) == cal_orig - 1){
+      tot_rows <- nrow(df)
+      df <- df %>%
         mutate(fix_length_random_order = sample(1:tot_rows, tot_rows, replace = FALSE)) %>%
-        mutate(Items_UL1 = ifelse(fix_length_random_order == 1, Items_UL1 + 1, Items_UL1)) %>%
-        mutate(Items_UL1 = max(Items_UL1)) %>%
+        mutate(L1_Items = ifelse(fix_length_random_order == 1, L1_Items + 1, L1_Items)) %>%
+        mutate(L1_Items = max(L1_Items)) %>%
         ungroup()
     }
 
     #Randomly subtract item if total length is cal + 1
-    if (sum(items_by_ul1$Items_UL1) == cal_orig + 1){
-      tot_rows <- nrow(items_by_ul1)
-      items_by_ul1 <- items_by_ul1%>%
+    if (sum(df$L1_Items) == cal_orig + 1){
+      tot_rows <- nrow(df)
+      df <- df%>%
         mutate(fix_length_random_order = sample(1:tot_rows, tot_rows, replace = FALSE)) %>%
-        mutate(Items_UL1 = ifelse(fix_length_random_order == 1, Items_UL1 - 1, Items_UL1)) %>%
-        mutate(Items_UL1 = min(Items_UL1))
+        mutate(L1_Items = ifelse(fix_length_random_order == 1, L1_Items - 1, L1_Items)) %>%
+        mutate(L1_Items = min(L1_Items))
     }
 
   }
 
-  return(items_by_ul1)
+  return(df)
 
 }
